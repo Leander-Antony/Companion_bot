@@ -27,6 +27,35 @@ async def on_ready():
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message('Hello!')
 
+# Ensure directories exist
+if not os.path.exists('notes'):
+    os.makedirs('notes')
+
+# Command to upload a note (file)
+@bot.command()
+async def upload_note(ctx, subject: str):
+    if len(ctx.message.attachments) == 0:
+        await ctx.send("Please attach a file.")
+        return
+
+    attachment = ctx.message.attachments[0]
+    file_path = f'notes/{subject}/{attachment.filename}'
+    
+    if not os.path.exists(f'notes/{subject}'):
+        os.makedirs(f'notes/{subject}')
+    
+    await attachment.save(file_path)
+    await ctx.send(f"File uploaded successfully: {file_path}")
+
+# Command to retrieve a note (link)
+@bot.command()
+async def get_note(ctx, subject: str, filename: str):
+    file_path = f'notes/{subject}/{filename}'
+    
+    if os.path.exists(file_path):
+        await ctx.send(f"Here is your file: {file_path}")
+    else:
+        await ctx.send("File not found.")
 
 # Slash command for info
 @bot.tree.command(name="info", description="Displays information about the bot")
