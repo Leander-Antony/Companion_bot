@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 import discord
 from discord.ext import commands
-from discord import app_commands
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -12,12 +11,15 @@ intents.messages = True
 intents.message_content = True 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# Registering application commands (slash commands)
+# Store links globally
+notes_links = {}
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
     try:
-        synced = await bot.tree.sync()  # Sync all commands with Discord
+        # Sync all commands with Discord
+        synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
     except Exception as e:
         print(f"Failed to sync commands: {e}")
@@ -27,37 +29,24 @@ async def on_ready():
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message('Hello!')
 
-# Ensure directories exist
-if not os.path.exists('notes'):
-    os.makedirs('notes')
+# Slash command for adding a link
+@bot.tree.command(name="add_link", description="Add a link for a subject")
+async def add_link(interaction: discord.Interaction, subject: str, link: str):
+    if subject not in notes_links:
+        notes_links[subject] = []
+    notes_links[subject].append(link)
+    await interaction.response.send_message(f"Link added for {subject}.")
 
-# Command to upload a note (file)
-@bot.command()
-async def upload_note(ctx, subject: str):
-    if len(ctx.message.attachments) == 0:
-        await ctx.send("Please attach a file.")
-        return
-
-    attachment = ctx.message.attachments[0]
-    file_path = f'notes/{subject}/{attachment.filename}'
-    
-    if not os.path.exists(f'notes/{subject}'):
-        os.makedirs(f'notes/{subject}')
-    
-    await attachment.save(file_path)
-    await ctx.send(f"File uploaded successfully: {file_path}")
-
-# Command to retrieve a note (link)
-@bot.command()
-async def get_note(ctx, subject: str, filename: str):
-    file_path = f'notes/{subject}/{filename}'
-    
-    if os.path.exists(file_path):
-        await ctx.send(f"Here is your file: {file_path}")
+# Slash command for getting links
+@bot.tree.command(name="get_links", description="Get all links for a subject")
+async def get_links(interaction: discord.Interaction, subject: str):
+    if subject in notes_links:
+        links = "\n".join(notes_links[subject])
+        await interaction.response.send_message(f"Links for {subject}:\n{links}")
     else:
-        await ctx.send("File not found.")
+        await interaction.response.send_message(f"No links found for {subject}.")
 
-# Slash command for info
+# Slash command for displaying bot information
 @bot.tree.command(name="info", description="Displays information about the bot")
 async def info(interaction: discord.Interaction):
     embed = discord.Embed(title="Bot Information", description="Some useful information about the bot.", color=0x00ff00)
