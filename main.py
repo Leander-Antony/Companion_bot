@@ -3,13 +3,6 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from discord import app_commands
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Bot is running"
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -42,12 +35,4 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name="Server count", value=f"{len(bot.guilds)}", inline=False)
     await interaction.response.send_message(embed=embed)
 
-if __name__ == "__main__":
-    import threading
-    def run_bot():
-        bot.run(TOKEN)
-
-    bot_thread = threading.Thread(target=run_bot)
-    bot_thread.start()
-
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+bot.run(TOKEN)
