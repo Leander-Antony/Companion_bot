@@ -39,12 +39,26 @@ async def add_link(interaction: discord.Interaction, subject: str, link: str):
 
 # Slash command for getting links
 @bot.tree.command(name="get_links", description="Get all links for a subject")
-async def get_links(interaction: discord.Interaction, subject: str):
-    if subject in notes_links:
+async def get_links(interaction: discord.Interaction, subject: str = None):
+    if subject is None:
+        subjects = list(notes_links.keys())
+        if subjects:
+            subjects_list = "\n".join(subjects)
+            await interaction.response.send_message(f"Available subjects:\n{subjects_list}")
+        else:
+            await interaction.response.send_message("No subjects found.")
+    elif subject in notes_links:
         links = "\n".join(notes_links[subject])
         await interaction.response.send_message(f"Links for {subject}:\n{links}")
     else:
         await interaction.response.send_message(f"No links found for {subject}.")
+
+
+# Slash command for questin paperlink
+@bot.tree.command(name="question_paper", description="provides the drive link")
+async def question_paper(interaction: discord.Interaction):
+    link = "https://drive.google.com/drive/folders/1jgUywox4M9qGfXDoRf-UMVrFfaKvruOm?usp=sharing"
+    await interaction.response.send_message(link)
 
 # Slash command for displaying bot information
 @bot.tree.command(name="info", description="Displays information about the bot")
