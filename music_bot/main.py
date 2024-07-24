@@ -14,7 +14,7 @@ intents.voice_states = True
 # Discord bot Initialization with intents
 client = discord.Client(intents=intents)
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN_MUSIC')
+TOKEN = os.getenv('DISCORD_TOKEN')
 
 voice_clients = {}
 queues = {}  # Dictionary to manage queues for each server
