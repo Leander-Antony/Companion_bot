@@ -34,10 +34,10 @@ async def play_next(ctx):
         url = queues[ctx.guild.id].popleft()
         data = await asyncio.to_thread(lambda: ytdl.extract_info(url, download=False))
         song = data['url']
-        
+
         ffmpeg_exe = ffmpeg.get_ffmpeg_exe()
-        player = discord.FFmpegPCMAudio(song, executable=ffmpeg_exe)
-        
+        player = discord.FFmpegOpusAudio(song, executable=ffmpeg_exe)
+
         voice_clients[ctx.guild.id].play(player, after=lambda e: asyncio.run(play_next(ctx)))
     else:
         await ctx.voice_client.disconnect()
@@ -53,6 +53,11 @@ async def on_ready():
 async def on_message(msg):
     if msg.content.startswith("?play"):
         try:
+            # Check if the user is in a voice channel
+            if msg.author.voice is None:
+                await msg.channel.send("You need to be in a voice channel to use this command.")
+                return
+
             if msg.guild.id not in voice_clients or not voice_clients[msg.guild.id].is_connected():
                 voice_client = await msg.author.voice.channel.connect()
                 voice_clients[msg.guild.id] = voice_client
@@ -62,7 +67,7 @@ async def on_message(msg):
             if not url:
                 # If not predefined, use the URL from the message
                 url = msg.content.split()[1]
-            
+
             if msg.guild.id not in queues:
                 queues[msg.guild.id] = deque()
 
@@ -73,6 +78,8 @@ async def on_message(msg):
                 await play_next(msg)
         except Exception as e:
             print(f"Error: {e}")
+            await msg.channel.send("An error occurred while trying to play the song.")
+
 
     if msg.content.startswith("?pause"):
         try:
@@ -97,7 +104,7 @@ async def on_message(msg):
                 del queues[msg.guild.id]
         except Exception as e:
             print(f"Error stopping song: {e}")
-    
+
     if msg.content.startswith("?skip"):
         try:
             if msg.guild.id in voice_clients and voice_clients[msg.guild.id].is_playing():
