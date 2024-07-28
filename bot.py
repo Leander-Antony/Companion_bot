@@ -5,7 +5,9 @@ import yt_dlp as youtube_dl
 import imageio_ffmpeg as ffmpeg
 from collections import deque
 from dotenv import load_dotenv
-from flask import Flask
+
+from keep_alive import keep_alive
+keep_alive()
 
 # Define the required intents
 intents = discord.Intents.default()
@@ -81,6 +83,7 @@ async def on_message(msg):
             print(f"Error: {e}")
             await msg.channel.send("An error occurred while trying to play the song.")
 
+
     if msg.content.startswith("?pause"):
         try:
             if msg.guild.id in voice_clients:
@@ -115,17 +118,16 @@ async def on_message(msg):
     if msg.content.startswith("?help"):
         help_message = (
             "**Available Commands:**\n"
-            "`?play <URL>` - Plays the audio from the given URL.\n"
-            "`?play_hogwarts` - Plays the Hogwarts theme.\n"
-            "`?play_phonk` - Plays Chill Phonk music.\n"
-            "`?play_lofi` - Plays Lofi music.\n"
-            "`?pause` - Pauses the currently playing audio.\n"
-            "`?resume` - Resumes the paused audio.\n"
-            "`?stop` - Stops the audio and disconnects from the voice channel.\n"
-            "`?skip` - Skips the currently playing song.\n"
-            "Type `?help` to see this message."
+            "?play <URL> - Plays the audio from the given URL.\n"
+            "?play_hogwarts - Plays the Hogwarts theme.\n"
+            "?play_phonk - Plays Chill Phonk music.\n"
+            "?play_lofi - Plays Lofi music.\n"
+            "?pause - Pauses the currently playing audio.\n"
+            "?resume - Resumes the paused audio.\n"
+            "?stop - Stops the audio and disconnects from the voice channel.\n"
+            "?skip - Skips the currently playing song.\n"
+            "Type ?help to see this message."
         )
         await msg.channel.send(help_message)
 
-if __name__ == "__main__":
-    client.run(TOKEN)
+client.run(TOKEN)
