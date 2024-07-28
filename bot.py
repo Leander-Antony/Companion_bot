@@ -159,12 +159,12 @@ async def skip(interaction: discord.Interaction):
 async def help_command(interaction: discord.Interaction):
     help_message = (
         "**Available Commands:**\n"
-        "/play <URL or song name> - Plays the audio from the given URL or searches for the song name.\n"
-        "/pause - Pauses the currently playing audio.\n"
-        "/resume - Resumes the paused audio.\n"
-        "/stop - Stops the audio and disconnects from the voice channel.\n"
-        "/skip - Skips the currently playing song.\n"
-        "Type /help to see this message."
+        "`/play <URL or song name>` - Plays the audio from the given URL or searches for the song name.\n"
+        "`/pause` - Pauses the currently playing audio.\n"
+        "`/resume` - Resumes the paused audio.\n"
+        "`/stop` - Stops the audio and disconnects from the voice channel.\n"
+        "`/skip` - Skips the currently playing song.\n"
+        "Type `/help` to see this message."
     )
     await interaction.response.send_message(help_message)
 
