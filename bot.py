@@ -32,6 +32,20 @@ links = {
     "?play_lofi": "https://youtu.be/CMNyHBx1gak?si=dlr-xU2w9pkiIMKx"
 }
 
+async def search_youtube(query):
+    search_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True,
+        'noplaylist': True,
+        'default_search': 'ytsearch',
+    }
+    ytdl_search = youtube_dl.YoutubeDL(search_opts)
+    info = await asyncio.to_thread(lambda: ytdl_search.extract_info(query, download=False))
+    if 'entries' in info:
+        # Return the URL of the first result
+        return info['entries'][0]['url']
+    return None
+
 async def play_next(voice_client):
     if voice_client.guild.id in queues and queues[voice_client.guild.id]:
         url = queues[voice_client.guild.id].popleft()
@@ -67,11 +81,25 @@ async def on_message(msg):
                 voice_client = await msg.author.voice.channel.connect()
                 voice_clients[msg.guild.id] = voice_client
 
-            # Check if the command is for a predefined link
-            url = links.get(msg.content, None)
-            if not url:
-                # If not predefined, use the URL from the message
-                url = msg.content.split()[1]
+            # Extract the URL or song name from the message
+            args = msg.content.split(maxsplit=1)
+            if len(args) > 1:
+                query = args[1]
+            else:
+                query = None
+
+            if query is None:
+                # If no URL or song name is provided, use predefined commands
+                url = links.get(msg.content, None)
+                if not url:
+                    await msg.channel.send("Please provide a URL or use a predefined command to play a song.")
+                    return
+            else:
+                # Search YouTube for the song name
+                url = await search_youtube(query)
+                if not url:
+                    await msg.channel.send("Could not find the song. Please check the song name or try again.")
+                    return
 
             if msg.guild.id not in queues:
                 queues[msg.guild.id] = deque()
@@ -117,23 +145,28 @@ async def on_message(msg):
 
     if msg.content.startswith("?skip"):
         try:
-            if msg.guild.id in voice_clients and voice_clients[msg.guild.id].is_playing():
-                voice_clients[msg.guild.id].stop()
+            if msg.guild.id in voice_clients:
+                if voice_clients[msg.guild.id].is_playing():
+                    voice_clients[msg.guild.id].stop()
+                if not queues.get(msg.guild.id):
+                    await msg.channel.send("This is the last song. Add more songs to skip further.")
+                else:
+                    await play_next(voice_clients[msg.guild.id])
         except Exception as e:
             print(f"Error skipping song: {e}")
 
     if msg.content.startswith("?help"):
         help_message = (
             "**Available Commands:**\n"
-            "?play <URL> - Plays the audio from the given URL.\n"
-            "?play_hogwarts - Plays the Hogwarts theme.\n"
-            "?play_phonk - Plays Chill Phonk music.\n"
-            "?play_lofi - Plays Lofi music.\n"
-            "?pause - Pauses the currently playing audio.\n"
-            "?resume - Resumes the paused audio.\n"
-            "?stop - Stops the audio and disconnects from the voice channel.\n"
-            "?skip - Skips the currently playing song.\n"
-            "Type ?help to see this message."
+            "`?play <URL>` - Plays the audio from the given URL.\n"
+            "`?play_hogwarts` - Plays the Hogwarts theme.\n"
+            "`?play_phonk` - Plays Chill Phonk music.\n"
+            "`?play_lofi` - Plays Lofi music.\n"
+            "`?pause` - Pauses the currently playing audio.\n"
+            "`?resume` - Resumes the paused audio.\n"
+            "`?stop` - Stops the audio and disconnects from the voice channel.\n"
+            "`?skip` - Skips the currently playing song.\n"
+            "Type `?help` to see this message."
         )
         await msg.channel.send(help_message)
 
