@@ -101,12 +101,18 @@ async def on_message(msg):
     if msg.content.startswith("?stop"):
         try:
             if msg.guild.id in voice_clients:
-                voice_clients[msg.guild.id].stop()
+                # Stop the currently playing audio and disconnect from the voice channel
+                if voice_clients[msg.guild.id].is_playing():
+                    voice_clients[msg.guild.id].stop()
                 await voice_clients[msg.guild.id].disconnect()
                 del voice_clients[msg.guild.id]
                 del queues[msg.guild.id]
+            else:
+                await msg.channel.send("No audio is currently playing.")
         except Exception as e:
             print(f"Error stopping song: {e}")
+            await msg.channel.send(f"An error occurred while trying to stop the song: {e}")
+
 
     if msg.content.startswith("?skip"):
         try:
