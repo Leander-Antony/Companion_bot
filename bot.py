@@ -75,6 +75,7 @@ async def on_ready():
 @bot.tree.command(name='play', description='Play a song from a URL or name')
 async def play(interaction: discord.Interaction, query: str):
     try:
+        # Check if the user is in a voice channel
         if interaction.user.voice is None:
             await interaction.response.send_message("You need to be in a voice channel to use this command.")
             return
@@ -94,6 +95,7 @@ async def play(interaction: discord.Interaction, query: str):
         if interaction.guild.id not in queues:
             queues[interaction.guild.id] = deque()
 
+        # Add the URL to the queue
         queues[interaction.guild.id].append(url)
 
         if not voice_clients[interaction.guild.id].is_playing():
@@ -102,7 +104,11 @@ async def play(interaction: discord.Interaction, query: str):
         await interaction.response.send_message(f"Added {query} to the queue.")
     except Exception as e:
         print(f"Error: {e}")
-        await interaction.response.send_message("An error occurred while trying to play the song.")
+        if interaction.response.is_done():
+            await interaction.followup.send("An error occurred while trying to play the song.")
+        else:
+            await interaction.response.send_message("An error occurred while trying to play the song.")
+
 
 @bot.tree.command(name='pause', description='Pause the currently playing song')
 async def pause(interaction: discord.Interaction):
