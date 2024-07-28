@@ -109,8 +109,6 @@ async def play(interaction: discord.Interaction, query: str):
         print(f"Error: {e}")
         await interaction.followup.send("An error occurred while trying to play the song.")
 
-
-
 @bot.tree.command(name='pause', description='Pause the currently playing song')
 async def pause(interaction: discord.Interaction):
     try:
@@ -171,8 +169,56 @@ async def help_command(interaction: discord.Interaction):
         "`/resume` - Resumes the paused audio.\n"
         "`/stop` - Stops the audio and disconnects from the voice channel.\n"
         "`/skip` - Skips the currently playing song.\n"
+        "`/lofi` - Plays lofi music.\n"
+        "`/hogwarts` - Plays Hogwarts music.\n"
+        "`/phonk` - Plays phonk music.\n"
         "Type `/help` to see this message."
     )
     await interaction.response.send_message(help_message)
+
+@bot.tree.command(name='lofi', description='Play lofi music')
+async def lofi(interaction: discord.Interaction):
+    await play_predefined_song(interaction, "lofi")
+
+@bot.tree.command(name='hogwarts', description='Play Hogwarts music')
+async def hogwarts(interaction: discord.Interaction):
+    await play_predefined_song(interaction, "hogwarts")
+
+@bot.tree.command(name='phonk', description='Play phonk music')
+async def phonk(interaction: discord.Interaction):
+    await play_predefined_song(interaction, "phonk")
+
+async def play_predefined_song(interaction: discord.Interaction, song_name: str):
+    try:
+        # Acknowledge the interaction
+        await interaction.response.defer()  # Defer the response if processing takes longer
+
+        # Check if the user is in a voice channel
+        if interaction.user.voice is None:
+            await interaction.followup.send("You need to be in a voice channel to use this command.")
+            return
+
+        if interaction.guild.id not in voice_clients or not voice_clients[interaction.guild.id].is_connected():
+            voice_client = await interaction.user.voice.channel.connect()
+            voice_clients[interaction.guild.id] = voice_client
+
+        url = links.get(song_name)
+        if not url:
+            await interaction.followup.send("The song could not be found.")
+            return
+
+        if interaction.guild.id not in queues:
+            queues[interaction.guild.id] = deque()
+
+        # Add the URL to the queue
+        queues[interaction.guild.id].append(url)
+
+        if not voice_clients[interaction.guild.id].is_playing():
+            await play_next(voice_clients[interaction.guild.id])
+
+        await interaction.followup.send(f"Added {song_name} to the queue.")
+    except Exception as e:
+        print(f"Error: {e}")
+        await interaction.followup.send(f"An error occurred while trying to play {song_name}.")
 
 bot.run(TOKEN)
