@@ -32,20 +32,22 @@ links = {
     "?play_lofi": "https://youtu.be/CMNyHBx1gak?si=dlr-xU2w9pkiIMKx"
 }
 
-async def play_next(ctx):
-    if ctx.guild.id in queues and queues[ctx.guild.id]:
-        url = queues[ctx.guild.id].popleft()
+async def play_next(voice_client):
+    if voice_client.guild.id in queues and queues[voice_client.guild.id]:
+        url = queues[voice_client.guild.id].popleft()
         data = await asyncio.to_thread(lambda: ytdl.extract_info(url, download=False))
         song = data['url']
 
         ffmpeg_exe = ffmpeg.get_ffmpeg_exe()
         player = discord.FFmpegOpusAudio(song, executable=ffmpeg_exe)
 
-        voice_clients[ctx.guild.id].play(player, after=lambda e: asyncio.run(play_next(ctx)))
+        # Play the next song in the queue
+        voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(play_next(voice_client), client.loop).result())
     else:
-        await ctx.voice_client.disconnect()
-        del voice_clients[ctx.guild.id]
-        del queues[ctx.guild.id]
+        # Disconnect if there are no more songs in the queue
+        await voice_client.disconnect()
+        del voice_clients[voice_client.guild.id]
+        del queues[voice_client.guild.id]
 
 @client.event
 async def on_ready():
@@ -78,11 +80,11 @@ async def on_message(msg):
             queues[msg.guild.id].append(url)
 
             if not voice_clients[msg.guild.id].is_playing():
-                await play_next(msg)
+                # Pass the voice client to play_next
+                await play_next(voice_clients[msg.guild.id])
         except Exception as e:
             print(f"Error: {e}")
             await msg.channel.send("An error occurred while trying to play the song.")
-
 
     if msg.content.startswith("?pause"):
         try:
@@ -112,7 +114,6 @@ async def on_message(msg):
         except Exception as e:
             print(f"Error stopping song: {e}")
             await msg.channel.send(f"An error occurred while trying to stop the song: {e}")
-
 
     if msg.content.startswith("?skip"):
         try:
