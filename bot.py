@@ -75,9 +75,12 @@ async def on_ready():
 @bot.tree.command(name='play', description='Play a song from a URL or name')
 async def play(interaction: discord.Interaction, query: str):
     try:
+        # Acknowledge the interaction
+        await interaction.response.defer()  # Defer the response if processing takes longer
+
         # Check if the user is in a voice channel
         if interaction.user.voice is None:
-            await interaction.response.send_message("You need to be in a voice channel to use this command.")
+            await interaction.followup.send("You need to be in a voice channel to use this command.")
             return
 
         if interaction.guild.id not in voice_clients or not voice_clients[interaction.guild.id].is_connected():
@@ -89,7 +92,7 @@ async def play(interaction: discord.Interaction, query: str):
         else:
             url = await search_youtube(query)
             if not url:
-                await interaction.response.send_message("Could not find the song. Please check the song name or try again.")
+                await interaction.followup.send("Could not find the song. Please check the song name or try again.")
                 return
 
         if interaction.guild.id not in queues:
@@ -101,13 +104,11 @@ async def play(interaction: discord.Interaction, query: str):
         if not voice_clients[interaction.guild.id].is_playing():
             await play_next(voice_clients[interaction.guild.id])
 
-        await interaction.response.send_message(f"Added {query} to the queue.")
+        await interaction.followup.send(f"Added {query} to the queue.")
     except Exception as e:
         print(f"Error: {e}")
-        if interaction.response.is_done():
-            await interaction.followup.send("An error occurred while trying to play the song.")
-        else:
-            await interaction.response.send_message("An error occurred while trying to play the song.")
+        await interaction.followup.send("An error occurred while trying to play the song.")
+
 
 
 @bot.tree.command(name='pause', description='Pause the currently playing song')
