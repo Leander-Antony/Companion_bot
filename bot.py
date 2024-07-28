@@ -69,11 +69,12 @@ async def play_next(voice_client):
 async def on_ready():
     print(f"Bot logged in as {bot.user}")
     await bot.change_presence(activity=discord.Game(name="type /help"))
+    # Sync commands
+    await bot.tree.sync()
 
 @bot.tree.command(name='play', description='Play a song from a URL or name')
 async def play(interaction: discord.Interaction, query: str):
     try:
-        # Check if the user is in a voice channel
         if interaction.user.voice is None:
             await interaction.response.send_message("You need to be in a voice channel to use this command.")
             return
@@ -82,7 +83,6 @@ async def play(interaction: discord.Interaction, query: str):
             voice_client = await interaction.user.voice.channel.connect()
             voice_clients[interaction.guild.id] = voice_client
 
-        # Extract the URL or song name from the query
         if query in links:
             url = links[query]
         else:
@@ -94,11 +94,9 @@ async def play(interaction: discord.Interaction, query: str):
         if interaction.guild.id not in queues:
             queues[interaction.guild.id] = deque()
 
-        # Add the URL to the queue
         queues[interaction.guild.id].append(url)
 
         if not voice_clients[interaction.guild.id].is_playing():
-            # Pass the voice client to play_next
             await play_next(voice_clients[interaction.guild.id])
 
         await interaction.response.send_message(f"Added {query} to the queue.")
@@ -130,7 +128,6 @@ async def resume(interaction: discord.Interaction):
 async def stop(interaction: discord.Interaction):
     try:
         if interaction.guild.id in voice_clients:
-            # Stop the currently playing audio and disconnect from the voice channel
             if voice_clients[interaction.guild.id].is_playing():
                 voice_clients[interaction.guild.id].stop()
             await voice_clients[interaction.guild.id].disconnect()
